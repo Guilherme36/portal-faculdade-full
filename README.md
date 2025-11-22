@@ -2,9 +2,9 @@
 
 ## 👥 Integrantes do Grupo
 
-- **Guilherme** - RA: [211590]
-- **[Nome do Integrante 2]** - RA: [RA]
-- **[Nome do Integrante 3]** - RA: [RA]
+- **Guilherme Felipe Reis Soares** - RA: 211590
+- **Gabriel Pereira De Camargo** - RA: 210039
+- **Henrique Campana De Morais** - RA: 180200
 
 ## 📋 Resumo do Projeto
 
