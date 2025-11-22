@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Turmas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        nav { background: #2c3e50; color: white; padding: 1rem; }
+        nav a { color: white; text-decoration: none; margin: 0 1rem; padding: 0.5rem 1rem; display: inline-block; }
+        nav a:hover { background: #34495e; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; padding: 2rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-bottom: 1rem; }
+        form { display: flex; flex-direction: column; gap: 1rem; max-width: 500px; }
+        input, select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 0.75rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .btn-inscricao { padding: 0.5rem 1rem; background: #27ae60; }
+        .btn-inscricao:hover { background: #229954; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #ecf0f1; }
+        .msg { padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .btn-edit { background: #f39c12; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+        .btn-delete { background: #e74c3c; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 2rem; width: 90%; max-width: 500px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/alunos">Alunos</a>
+        <a href="/professores">Professores</a>
+        <a href="/materias">Matérias</a>
+        <a href="/turmas">Turmas</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Criar Turma</h2>
+            <div id="message"></div>
+            <form id="formCriar">
+                <select name="materia_id" required>
+                    <option value="">Selecione a Matéria</option>
+                </select>
+                <select name="professor_id" required>
+                    <option value="">Selecione o Professor</option>
+                </select>
+                <input type="text" name="dia_semana" placeholder="Dia da Semana" required>
+                <input type="time" name="hora_inicio" required>
+                <input type="time" name="hora_fim" required>
+                <button type="submit">Criar Turma</button>
+            </form>
+        </div>
+        <div id="modalEditar" class="modal">
+            <div class="modal-content">
+                <h2>Editar Turma</h2>
+                <form id="formEditar">
+                    <input type="hidden" name="id">
+                    <select name="materia_id" required>
+                        <option value="">Selecione a Matéria</option>
+                    </select>
+                    <select name="professor_id" required>
+                        <option value="">Selecione o Professor</option>
+                    </select>
+                    <input type="text" name="dia_semana" placeholder="Dia da Semana" required>
+                    <input type="time" name="hora_inicio" required>
+                    <input type="time" name="hora_fim" required>
+                    <button type="submit">Atualizar Turma</button>
+                    <button type="button" onclick="cancelarEdicao()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Turmas Disponíveis</h2>
+            <table id="tabela">
+                <thead>
+                    <tr><th>ID</th><th>Matéria</th><th>Professor</th><th>Dia</th><th>Horário</th><th>Alunos</th><th>Ações</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        let materias = {}, professores = {};
+        async function carregarDados() {
+            const [resMat, resProf, resTurmas] = await Promise.all([
+                fetch('/api/materias/'),
+                fetch('/api/professores/'),
+                fetch('/api/turmas/')
+            ]);
+            const mats = await resMat.json();
+            const profs = await resProf.json();
+            const turmas = await resTurmas.json();
+            
+            mats.forEach(m => materias[m.id] = m.nome);
+            profs.forEach(p => professores[p.id] = p.nome);
+            
+            const opsMat = '<option value="">Selecione a Matéria</option>' + mats.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+            const opsProf = '<option value="">Selecione o Professor</option>' + profs.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            
+            document.querySelector('#formCriar select[name="materia_id"]').innerHTML = opsMat;
+            document.querySelector('#formCriar select[name="professor_id"]').innerHTML = opsProf;
+            document.querySelector('#formEditar select[name="materia_id"]').innerHTML = opsMat;
+            document.querySelector('#formEditar select[name="professor_id"]').innerHTML = opsProf;
+            
+            document.querySelector('#tabela tbody').innerHTML = turmas.map(t => 
+                `<tr>
+                    <td>${t.id}</td>
+                    <td>${materias[t.materia_id] || t.materia_id}</td>
+                    <td>${professores[t.professor_id] || t.professor_id}</td>
+                    <td>${t.dia_semana}</td>
+                    <td>${t.hora_inicio} - ${t.hora_fim}</td>
+                    <td>${t.aluno_ids.length}</td>
+                    <td>
+                        <button class="btn-edit" onclick='editar(${JSON.stringify(t)})'>Editar</button>
+                        <button class="btn-delete" onclick="deletar(${t.id})">Deletar</button>
+                        <button class="btn-inscricao" onclick="inscrever(${t.id})">Inscrever</button>
+                    </td>
+                </tr>`
+            ).join('');
+        }
+        
+        function editar(turma) {
+            document.getElementById('modalEditar').style.display = 'block';
+            const form = document.getElementById('formEditar');
+            form.querySelector('[name=id]').value = turma.id;
+            form.querySelector('[name=materia_id]').value = turma.materia_id;
+            form.querySelector('[name=professor_id]').value = turma.professor_id;
+            form.querySelector('[name=dia_semana]').value = turma.dia_semana;
+            form.querySelector('[name=hora_inicio]').value = turma.hora_inicio;
+            form.querySelector('[name=hora_fim]').value = turma.hora_fim;
+        }
+        
+        function cancelarEdicao() {
+            document.getElementById('modalEditar').style.display = 'none';
+            document.getElementById('formEditar').reset();
+        }
+        
+        async function deletar(id) {
+            if (!confirm('Deletar turma?')) return;
+            const res = await fetch(`/api/turmas/${id}/`, {method: 'DELETE'});
+            if (res.ok) {
+                document.getElementById('message').innerHTML = '<div class="msg success">Turma deletada!</div>';
+                carregarDados();
+            } else {
+                document.getElementById('message').innerHTML = '<div class="msg error">Erro ao deletar</div>';
+            }
+        }
+        
+        async function inscrever(turmaId) {
+            const alunoId = prompt('Digite o ID do aluno:');
+            if (!alunoId) return;
+            const res = await fetch(`/api/turmas/${turmaId}/inscricoes/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({aluno_id: parseInt(alunoId)})
+            });
+            const data = await res.json();
+            alert(data.message || 'Inscrição realizada!');
+            carregarDados();
+        }
+        
+        document.getElementById('formCriar').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            data.materia_id = parseInt(data.materia_id);
+            data.professor_id = parseInt(data.professor_id);
+            const res = await fetch('/api/turmas/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                document.getElementById('message').innerHTML = '<div class="msg success">Turma criada!</div>';
+                e.target.reset();
+                carregarDados();
+            } else {
+                document.getElementById('message').innerHTML = '<div class="msg error">Erro ao criar</div>';
+            }
+        };
+        document.getElementById('formEditar').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            const id = data.id;
+            delete data.id;
+            data.materia_id = parseInt(data.materia_id);
+            data.professor_id = parseInt(data.professor_id);
+            const res = await fetch(`/api/turmas/${id}/`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                document.getElementById('message').innerHTML = '<div class="msg success">Turma atualizada!</div>';
+                cancelarEdicao();
+                carregarDados();
+            } else {
+                document.getElementById('message').innerHTML = '<div class="msg error">Erro ao atualizar</div>';
+            }
+        };
+        carregarDados();
+    </script>
+</body>
+</html>

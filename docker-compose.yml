@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: turmas_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build: ./backend_service
+    ports:
+      - "50051:50051"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/turmas_db
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+    command: sh -c "sleep 5 && python server.py"
+
+  consumer:
+    build: ./backend_service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/turmas_db
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    restart: on-failure
+    command: sh -c "sleep 15 && python consumer.py"
+
+  frontend:
+    build: ./frontend_service
+    ports:
+      - "8000:8000"
+    environment:
+      GRPC_HOST: backend:50051
+    depends_on:
+      backend:
+        condition: service_started
+    restart: on-failure
+    command: sh -c "sleep 10 && python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  postgres_data:

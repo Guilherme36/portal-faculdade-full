@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package class;
+
+service ClassService {
+  rpc CreateClass(CreateClassRequest) returns (ClassResponse);
+  rpc GetClass(GetClassRequest) returns (ClassResponse);
+  rpc ListClasses(ListClassesRequest) returns (ListClassesResponse);
+  rpc UpdateClass(UpdateClassRequest) returns (ClassResponse);
+  rpc DeleteClass(DeleteClassRequest) returns (DeleteClassResponse);
+  rpc EnrollStudent(EnrollStudentRequest) returns (EnrollmentResponse);
+  rpc GetClassStats(GetClassStatsRequest) returns (ClassStatsResponse);
+}
+
+message Class {
+  int32 id = 1;
+  int32 materia_id = 2;
+  int32 professor_id = 3;
+  string dia_semana = 4;
+  string hora_inicio = 5;
+  string hora_fim = 6;
+  repeated int32 aluno_ids = 7;
+}
+
+message CreateClassRequest {
+  int32 materia_id = 1;
+  int32 professor_id = 2;
+  string dia_semana = 3;
+  string hora_inicio = 4;
+  string hora_fim = 5;
+}
+
+message GetClassRequest {
+  int32 id = 1;
+}
+
+message ListClassesRequest {}
+
+message ListClassesResponse {
+  repeated Class classes = 1;
+}
+
+message UpdateClassRequest {
+  int32 id = 1;
+  int32 materia_id = 2;
+  int32 professor_id = 3;
+  string dia_semana = 4;
+  string hora_inicio = 5;
+  string hora_fim = 6;
+}
+
+message DeleteClassRequest {
+  int32 id = 1;
+}
+
+message DeleteClassResponse {
+  bool success = 1;
+}
+
+message ClassResponse {
+  Class turma = 1;
+}
+
+message EnrollStudentRequest {
+  int32 class_id = 1;
+  int32 student_id = 2;
+}
+
+message EnrollmentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetClassStatsRequest {}
+
+message ClassStatsResponse {
+  repeated ClassStat stats = 1;
+}
+
+message ClassStat {
+  int32 class_id = 1;
+  int32 student_count = 2;
+  int32 professor_id = 3;
+  string materia_nome = 4;
+}

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package teacher;
+
+service TeacherService {
+  rpc CreateTeacher(CreateTeacherRequest) returns (TeacherResponse);
+  rpc GetTeacher(GetTeacherRequest) returns (TeacherResponse);
+  rpc ListTeachers(ListTeachersRequest) returns (ListTeachersResponse);
+  rpc UpdateTeacher(UpdateTeacherRequest) returns (TeacherResponse);
+  rpc DeleteTeacher(DeleteTeacherRequest) returns (DeleteTeacherResponse);
+}
+
+message Teacher {
+  int32 id = 1;
+  string nome = 2;
+  string email = 3;
+  string area = 4;
+}
+
+message CreateTeacherRequest {
+  string nome = 1;
+  string email = 2;
+  string area = 3;
+}
+
+message GetTeacherRequest {
+  int32 id = 1;
+}
+
+message ListTeachersRequest {}
+
+message ListTeachersResponse {
+  repeated Teacher teachers = 1;
+}
+
+message UpdateTeacherRequest {
+  int32 id = 1;
+  string nome = 2;
+  string email = 3;
+  string area = 4;
+}
+
+message DeleteTeacherRequest {
+  int32 id = 1;
+}
+
+message DeleteTeacherResponse {
+  bool success = 1;
+}
+
+message TeacherResponse {
+  Teacher teacher = 1;
+}

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package subject;
+
+service SubjectService {
+  rpc CreateSubject(CreateSubjectRequest) returns (SubjectResponse);
+  rpc GetSubject(GetSubjectRequest) returns (SubjectResponse);
+  rpc ListSubjects(ListSubjectsRequest) returns (ListSubjectsResponse);
+  rpc UpdateSubject(UpdateSubjectRequest) returns (SubjectResponse);
+  rpc DeleteSubject(DeleteSubjectRequest) returns (DeleteSubjectResponse);
+}
+
+message Subject {
+  int32 id = 1;
+  string nome = 2;
+  string descricao = 3;
+  int32 carga_horaria = 4;
+}
+
+message CreateSubjectRequest {
+  string nome = 1;
+  string descricao = 2;
+  int32 carga_horaria = 3;
+}
+
+message GetSubjectRequest {
+  int32 id = 1;
+}
+
+message ListSubjectsRequest {}
+
+message ListSubjectsResponse {
+  repeated Subject subjects = 1;
+}
+
+message UpdateSubjectRequest {
+  int32 id = 1;
+  string nome = 2;
+  string descricao = 3;
+  int32 carga_horaria = 4;
+}
+
+message DeleteSubjectRequest {
+  int32 id = 1;
+}
+
+message DeleteSubjectResponse {
+  bool success = 1;
+}
+
+message SubjectResponse {
+  Subject subject = 1;
+}

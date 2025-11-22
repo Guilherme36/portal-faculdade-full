@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Alunos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        nav { background: #2c3e50; color: white; padding: 1rem; }
+        nav a { color: white; text-decoration: none; margin: 0 1rem; padding: 0.5rem 1rem; display: inline-block; }
+        nav a:hover { background: #34495e; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; padding: 2rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-bottom: 1rem; }
+        form { display: flex; flex-direction: column; gap: 1rem; max-width: 500px; }
+        input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 0.75rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #ecf0f1; }
+        .msg { padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .btn-edit { background: #f39c12; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+        .btn-delete { background: #e74c3c; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 2rem; width: 90%; max-width: 500px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/alunos">Alunos</a>
+        <a href="/professores">Professores</a>
+        <a href="/materias">Matérias</a>
+        <a href="/turmas">Turmas</a>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>Cadastrar Aluno</h2>
+            <div id="message"></div>
+            <form id="formCriar">
+                <input type="text" name="nome" placeholder="Nome" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="matricula" placeholder="Matrícula" required>
+                <button type="submit">Cadastrar</button>
+            </form>
+        </div>
+        <div id="modalEditar" class="modal">
+            <div class="modal-content">
+                <h2>Editar Aluno</h2>
+                <form id="formEditar">
+                    <input type="hidden" name="id">
+                    <input type="text" name="nome" placeholder="Nome" required>
+                    <input type="email" name="email" placeholder="Email" required>
+                    <input type="text" name="matricula" placeholder="Matrícula" required>
+                    <button type="submit">Atualizar</button>
+                    <button type="button" onclick="cancelarEdicao()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Lista de Alunos</h2>
+            <table id="tabelaAlunos">
+                <thead>
+                    <tr><th>ID</th><th>Nome</th><th>Email</th><th>Matrícula</th><th>Ações</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        async function carregarAlunos() {
+            const res = await fetch('/api/alunos/');
+            const alunos = await res.json();
+            const tbody = document.querySelector('#tabelaAlunos tbody');
+            tbody.innerHTML = alunos.map(a => 
+                `<tr><td>${a.id}</td><td>${a.nome}</td><td>${a.email}</td><td>${a.matricula}</td>
+                <td><button class="btn-edit" onclick="editar(${a.id},'${a.nome}','${a.email}','${a.matricula}')">Editar</button>
+                <button class="btn-delete" onclick="deletar(${a.id})">Deletar</button></td></tr>`
+            ).join('');
+        }
+        function editar(id, nome, email, matricula) {
+            document.getElementById('modalEditar').style.display = 'block';
+            const form = document.getElementById('formEditar');
+            form.querySelector('[name=id]').value = id;
+            form.querySelector('[name=nome]').value = nome;
+            form.querySelector('[name=email]').value = email;
+            form.querySelector('[name=matricula]').value = matricula;
+        }
+        function cancelarEdicao() {
+            document.getElementById('modalEditar').style.display = 'none';
+            document.getElementById('formEditar').reset();
+        }
+        async function deletar(id) {
+            if (!confirm('Deletar aluno?')) return;
+            const res = await fetch(`/api/alunos/${id}/`, {method: 'DELETE'});
+            const msg = document.getElementById('message');
+            if (res.ok) {
+                msg.innerHTML = '<div class="msg success">Aluno deletado!</div>';
+                carregarAlunos();
+            } else {
+                msg.innerHTML = '<div class="msg error">Erro ao deletar</div>';
+            }
+        }
+        document.getElementById('formCriar').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            const res = await fetch('/api/alunos/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const msg = document.getElementById('message');
+            if (res.ok) {
+                msg.innerHTML = '<div class="msg success">Aluno cadastrado!</div>';
+                e.target.reset();
+                carregarAlunos();
+            } else {
+                msg.innerHTML = '<div class="msg error">Erro ao cadastrar</div>';
+            }
+        };
+        document.getElementById('formEditar').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            const id = data.id;
+            delete data.id;
+            const res = await fetch(`/api/alunos/${id}/`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const msg = document.getElementById('message');
+            if (res.ok) {
+                msg.innerHTML = '<div class="msg success">Aluno atualizado!</div>';
+                cancelarEdicao();
+                carregarAlunos();
+            } else {
+                msg.innerHTML = '<div class="msg error">Erro ao atualizar</div>';
+            }
+        };
+        carregarAlunos();
+    </script>
+</body>
+</html>
